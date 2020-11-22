@@ -1,4 +1,4 @@
-# tpmaxflow-py
+# dinic-maxflow-py
 ![](https://img.shields.io/badge/category-GraphTheory-informational?style=flat&logoColor=white&color=7E57C2) ![](https://img.shields.io/badge/category-Transportation-informational?style=flat&logoColor=white&color=F57C00) ![](https://img.shields.io/badge/code-python3-informational?style=flat&logoColor=white&color=42A5F5) ![](https://img.shields.io/badge/code-c++-informational?style=flat&logo=c++&logoColor=white&color=EC407A)
 
 
