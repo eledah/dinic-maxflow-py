@@ -3,22 +3,22 @@
 
 
 Maximum flow calculation for any graph network using Dinic's algorithm.
-https://en.wikipedia.org/wiki/Dinic%27s_algorithm
+
+<a href="https://en.wikipedia.org/wiki/Dinic%27s_algorithm">Wikipedia Article</a>
 
 
 
 ## Table of contents
 * [General info](#general-info)
 * [Screenshots](#screenshots)
-* [Setup](#Setup)
+* [Setup](#setup)
 * [Contact](#contact)
 
 ## General info
 The goal of this project to is calculate the maximum amount of available flow between any two points (the source and the sink) in a given graph network.
 
 ## Screenshots
-![](https://github.com/eledah/tpmaxflow-py/blob/main/output/visual/Initial%20Graph.png)
-![](https://github.com/eledah/tpmaxflow-py/blob/main/output/visual/Final%20Graph.png)
+<img src="https://github.com/eledah/tpmaxflow-py/blob/main/output/visual/Initial%20Graph.png" width="300"> <img src="https://github.com/eledah/tpmaxflow-py/blob/main/output/visual/Final%20Graph.png" width="300">
 
 ## Setup
 Set _FILE_LOCATION_ROOT_ under _#File Config_ to the where the master folder is located. Then change _FILE_LOCATION_DATA_ to choose the dataset. 
