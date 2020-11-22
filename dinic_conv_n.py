@@ -4,29 +4,99 @@ import matplotlib.pyplot as plt
 from queue import Queue
 from recordtype import recordtype
 
-plt.figure(figsize=(50, 50))
+# Configurations
+LOG_STEPS = True
 
+# Drawing Config
+DRAW_INITIAL_GRAPH = True
+DRAW_ITERATION_GRAPH = True
+DRAW_FINAL_GRAPH = True
+GRAPH_RESIZE = True
+GRAPH_SIZE = 5
+SAVE_GRAPHS = False
+
+# File Config
+FILE_LOCATION_ROOT = "C:/Users/eledah/Documents/Uni/tpmaxflow-py/"
+FILE_LOCATION_DATA = "data/d2.xlsx"
+FILE_LOCATION_GRAPHS = "output/visual/"
+
+# Color Config
+NODE_SOURCE = "#E91E63"
+NODE_SINK = "#388E3C"
+NODE_DEFAULT = "#03A9F4"
+EDGE_OVERLOADED = "#b71c1c"
+EDGE_DEFAULT = "#616161"
+
+# Tools
 Edge = recordtype('Edge', ['nextNode', 'reverseIndex', 'flow', 'cap'])
+
+nextNodeIndex = list()
+level = list()
+
+ITERATION = 1
+SOURCE = 0
+DESTINATION = 0
+MAXVAL = 1000000000
 
 G = nx.DiGraph()
 G_color = []
 G_edgeLabel = []
-G_Final = nx.DiGraph()
-
-nextNodeIndex = list()
-level = list()
-MAXVAL = 1000000000
-
-LOG_STEPS = True
-DRAW_INITIAL_GRAPH = True
-DRAW_FINAL_GRAPH = True
-
-FILE_LOCATION = "C:/Users/eledah/Documents/Uni/tpmaxflow-py/data/d1.xlsx"
 
 
 def step_log(txt):
     if LOG_STEPS:
         print("STEP:", txt)
+
+
+def G_DRAW(graph, title):
+    G = nx.DiGraph()
+    if GRAPH_RESIZE:
+        fig = plt.figure(figsize=(GRAPH_SIZE, GRAPH_SIZE), facecolor="#F5F5F5")
+    G_edgeLabel = {}
+    G_color = []
+    G_count = 1
+    plt.title(title)
+    for i in graph:
+        for j in i:
+            if title == "Final Graph":
+                if j.flow > 0:
+                    if j.flow == j.cap:
+                        G.add_edge(G_count, j.nextNode + 1, color=EDGE_OVERLOADED, weight=2)
+                    else:
+                        G.add_edge(G_count, j.nextNode + 1, color=EDGE_DEFAULT, weight=1)
+                    G_edgeLabel.update({(G_count, j.nextNode + 1): str(j.flow) + "/" + str(j.cap)})
+            else:
+                if j.flow >= 0:
+                    if j.flow == j.cap:
+                        G.add_edge(G_count, j.nextNode + 1, color=EDGE_OVERLOADED, weight=2)
+                    else:
+                        G.add_edge(G_count, j.nextNode + 1, color=EDGE_DEFAULT, weight=1)
+                    G_edgeLabel.update({(G_count, j.nextNode + 1): str(j.flow) + "/" + str(j.cap)})
+        G_count += 1
+
+    for node in G:
+        if node == SOURCE + 1:
+            G_color.append(NODE_SOURCE)
+        elif node == DESTINATION + 1:
+            G_color.append(NODE_SINK)
+        else:
+            G_color.append(NODE_DEFAULT)
+
+    pos = nx.circular_layout(G, scale=5)
+
+    edges = G.edges()
+    colors = list(nx.get_edge_attributes(G, 'color').values())
+    weights = list(nx.get_edge_attributes(G, 'weight').values())
+    for i in range(0, len(weights)):
+        weights[i] *= GRAPH_SIZE * 0.15
+
+    nx.draw(G, pos, edges=edges, alpha=1, node_color=G_color, with_labels=True, width=weights, edge_color=colors,
+            node_size=GRAPH_SIZE * 150, font_size=15)
+    nx.draw_networkx_edge_labels(G, pos, edge_labels=G_edgeLabel, edge_sizes=GRAPH_SIZE * 50)
+    plt.show()
+    saveFileName = FILE_LOCATION_ROOT + FILE_LOCATION_GRAPHS + title + ".png"
+    if SAVE_GRAPHS:
+        fig.savefig(saveFileName)
 
 
 def addEdge(prevNode, nextNode, weight, graph):
@@ -37,7 +107,7 @@ def addEdge(prevNode, nextNode, weight, graph):
     graph[nextNode].append(backward)
 
 
-def bfs(srcNode, destNode, graph, G_Final):
+def bfs(srcNode, destNode, graph):
     for index in range(len(level)):
         level[index] = -1
 
@@ -55,89 +125,52 @@ def bfs(srcNode, destNode, graph, G_Final):
             if level[nextNode] == -1 and currEdge.flow < currEdge.cap:
                 level[nextNode] = level[currNode] + 1
                 q.put(nextNode)
-
     return level[destNode] != -1
 
 
-def dfs(currNode, destNode, currMinFlow, graph, G_Final):
+def dfs(currNode, destNode, currMinFlow, graph):
+    global ITERATION
     if currNode == destNode:
         return currMinFlow
 
-    # for nextNodeIndex[currNode] in range(nextNodeIndex[currNode], len(graph[currNode])):
     for nextNodeIndex[currNode] in range(nextNodeIndex[currNode], len(graph[currNode])):
         e = graph[currNode][nextNodeIndex[currNode]]
 
         if level[e.nextNode] == level[currNode] + 1 and e.flow < e.cap:
             nextFlow = min(currMinFlow, e.cap - e.flow)
-            dfsVal = dfs(e.nextNode, destNode, nextFlow, graph, G_Final)
+            dfsVal = dfs(e.nextNode, destNode, nextFlow, graph)
 
             if dfsVal > 0:
                 e.flow += dfsVal
                 graph[e.nextNode][e.reverseIndex].flow -= dfsVal
-                G_Final.add_edge(e.reverseIndex + 1, e.nextNode + 1, weight=e.flow)
                 return dfsVal
-
+    if DRAW_ITERATION_GRAPH:
+        G_title = "Iteration #" + str(ITERATION)
+        ITERATION += 1
+        step_log("Drawing graph iteration...")
+        G_DRAW(graph, G_title)
+        step_log("Graph iteration drawing complete!")
     return 0
 
 
-def maxFlow(src, dest, graph, G_Final):
+def maxFlow(src, dest, graph):
     totalFlow = 0
-
-    while bfs(src, dest, graph, G_Final):
+    while bfs(src, dest, graph):
         for index in range(len(nextNodeIndex)):
             nextNodeIndex[index] = 0
-        flow = dfs(src, dest, MAXVAL, graph, G_Final)
+        flow = dfs(src, dest, MAXVAL, graph)
         while flow:
             totalFlow += flow
-            flow = dfs(src, dest, MAXVAL, graph, G_Final)
+            flow = dfs(src, dest, MAXVAL, graph)
 
     return totalFlow
 
 
 graph = list()
-step_log("Adding edges.")
-
-# MANUAL INPUT METHOD
-# numNodes = int(input("Enter the number of nodes:"))
-# numEdges = int(input("Enter the number of edges:"))
-
-# for i in range(0, numEdges):
-#     graph.append(list())
-
-# for i in range(0, numNodes):
-#     level.append(0)
-#     nextNodeIndex.append(0)
-
-# for i in range(0, numEdges):
-#     a = int(input())
-#     b = int(input())
-#     c = int(input())
-#
-#     a -= 1
-#     b -= 1
-#     addEdge(a, b, c, graph)
-#     print("Edge added!")
-
-# SIMPLE EXAMPLE
-# numNodes = 4
-# numEdges = 6
-
-# for i in range(0, numEdges):
-#     graph.append(list())
-
-# for i in range(0, numNodes):
-#     level.append(0)
-#     nextNodeIndex.append(0)
-
-# addEdge(0, 1, 3, graph)
-# addEdge(1, 2, 4, graph)
-# addEdge(2, 0, 2, graph)
-# addEdge(1, 1, 5, graph)
-# addEdge(2, 3, 3, graph)
-# addEdge(3, 2, 3, graph)
+step_log("Adding edges from excel file...")
 
 # READING DATA FROM EXCEL FILE
-wb = xlrd.open_workbook(FILE_LOCATION)
+wb = xlrd.open_workbook(FILE_LOCATION_ROOT + FILE_LOCATION_DATA)
 sheet = wb.sheet_by_index(0)
 
 numNodes = int(sheet.cell_value(0, 0))
@@ -145,9 +178,8 @@ numEdges = int(sheet.cell_value(0, 1))
 for i in range(0, numNodes):
     level.append(0)
     nextNodeIndex.append(0)
-for i in range(0, numEdges):
+for i in range(0, numNodes):
     graph.append(list())
-
 
 for i in range(1, sheet.nrows):
     src = int(sheet.row_values(i)[0] - 1)
@@ -155,63 +187,23 @@ for i in range(1, sheet.nrows):
     weight = int(sheet.row_values(i)[2])
     addEdge(src, dest, weight, graph)
 
-    # G.add_edge(src + 1, dest + 1)
-    if DRAW_INITIAL_GRAPH:
-        G.add_edge(src + 1, dest + 1, weight=weight)
+step_log("All edges added.")
+
+SOURCE = int(sheet.cell_value(0, 2)) - 1
+DESTINATION = int(sheet.cell_value(0, 3)) - 1
 
 if DRAW_INITIAL_GRAPH:
-    for node in G:
-        if node == 1:
-            G_color.append('red')
-        elif node == numNodes:
-            G_color.append('green')
-        else:
-            G_color.append('blue')
-    edges = G.edges()
-    pos = nx.circular_layout(G)
+    step_log("Drawing initial graph...")
+    G_DRAW(graph, "Initial Graph")
+    step_log("Initial graph drawing complete!")
 
-    nx.draw(G,
-            pos,
-            edges=edges,
-            alpha=0.9,
-            node_color=G_color,
-            with_labels=True
-            )
-    G_edgeLabel = nx.get_edge_attributes(G, 'weight')
-    nx.draw_networkx_edge_labels(G, pos, edge_labels=G_edgeLabel)
-    plt.show()
-
-
-step_log("All edges added.")
-step_log("Starting calculations.")
-
-MAXFLOW = maxFlow(0, numNodes - 1, graph, G_Final)
-
+print("Starting calculations from node", SOURCE + 1, "to node", DESTINATION + 1)
+MAXFLOW = maxFlow(SOURCE, DESTINATION, graph)
 step_log("Calculations done!")
 
 print("Maximum Possible Flow: ", MAXFLOW)
 
-
 if DRAW_FINAL_GRAPH:
-    plt.figure(figsize=(30, 30))
-    edges = G_Final.edges()
-    pos = nx.circular_layout(G_Final)
-    G_color = []
-    for node in G_Final:
-        if node == 1:
-            G_color.append('red')
-        elif node == numNodes:
-            G_color.append('green')
-        else:
-            G_color.append('blue')
-    nx.draw(G_Final,
-            pos,
-            edges=edges,
-            alpha=0.9,
-            node_color=G_color,
-            with_labels=True
-            )
-    G_edgeLabel = nx.get_edge_attributes(G_Final, 'weight')
-    nx.draw_networkx_edge_labels(G_Final, pos, edge_labels=G_edgeLabel)
-
-    plt.show()
+    step_log("Drawing final graph...")
+    G_DRAW(graph, "Final Graph")
+    step_log("Final graph drawing complete!")
