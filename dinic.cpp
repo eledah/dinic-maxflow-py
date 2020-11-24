@@ -19,7 +19,7 @@ struct Edge{
 
 void addEdge(int prevNode, int nextNode, int weight, vector< vector<Edge> > &graph){
     Edge forward = {nextNode, graph[nextNode].size(), 0, weight};
-    Edge backward = {prevNode, graph[prevNode].size(), 0, weight};
+    Edge backward = {prevNode, graph[prevNode].size(), 0, 0};
 
     graph[prevNode].push_back(forward);
     graph[nextNode].push_back(backward);
@@ -67,7 +67,7 @@ int dfs(int currNode, int destNode, int currMinFlow, vector< vector<Edge> > &gra
                 return dfsVal;
             }
         }
-        
+
 
     }
 
