@@ -18,6 +18,8 @@ Maximum flow calculation for any graph network using Dinic's algorithm.
 The goal of this project to is calculate the maximum amount of available flow between any two points (the source and the sink) in a given graph network.
 
 ## Screenshots
+The two images below show both the initial and the solved graphs. The red nodes are the sources, green nodes are the sinks and the blue nodes are the ones that are inbetween. The red edges in the final graph indicated the edges that are passing the full possible flow.
+ 
 <img src="https://github.com/eledah/tpmaxflow-py/blob/main/output/visual/Initial%20Graph.png" width="300"> <img src="https://github.com/eledah/tpmaxflow-py/blob/main/output/visual/Final%20Graph.png" width="300">
 
 ## Setup
