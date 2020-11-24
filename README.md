@@ -21,6 +21,7 @@ The goal of this project to is calculate the maximum amount of available flow be
 <img src="https://github.com/eledah/tpmaxflow-py/blob/main/output/visual/Initial%20Graph.png" width="300"> <img src="https://github.com/eledah/tpmaxflow-py/blob/main/output/visual/Final%20Graph.png" width="300">
 
 ## Setup
+### Python ver.
 Set _FILE_LOCATION_ROOT_ under _#File Config_ to the where the master folder is located. Then change _FILE_LOCATION_DATA_ to choose the dataset. 
 
 In order to add the dataset of your own, do as following:
@@ -36,6 +37,17 @@ In order to add the dataset of your own, do as following:
 |       Source Node      |    Destination Node   |     Edge Weight    |
 
 4- Save the file, alter the configurations as desired and run the code.
+
+### C++ ver.
+Inputting data must be in the following order:
+
+[Total Nodes] [Total Edges]
+
+[Source Node] [Destination Node] [Edge Weight]
+
+[Source Node] [Destination Node] [Edge Weight]
+
+And so on until all the edges are given to the program.
 
 ## Contact
 [@eledah](https://www.t.me/eledah)
