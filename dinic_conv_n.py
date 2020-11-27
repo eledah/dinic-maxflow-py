@@ -1,6 +1,7 @@
 import math
 import time
 import xlrd
+import pandas as pd
 import networkx as nx
 from queue import Queue
 from random import random
@@ -15,12 +16,13 @@ DRAW_INITIAL_GRAPH = True
 DRAW_ITERATION_GRAPH = False
 DRAW_FINAL_GRAPH = True
 GRAPH_SIZE = 5
-SAVE_GRAPHS = True
+SAVE_GRAPHS = False
 
 # File Config
 FILE_LOCATION_ROOT = "C:/Users/eledah/Documents/Uni/tpmaxflow-py/"
 FILE_LOCATION_DATA = "data/d2.xlsx"
 FILE_LOCATION_GRAPHS = "output/visual/"
+FILE_LOCATION_EXCEL = "output/data/"
 
 # Color Config
 NODE_SOURCE = "#E91E63"
@@ -42,7 +44,7 @@ MAXVAL = 1000000000
 
 def step_log(txt):
     if LOG_STEPS:
-        print("STEP:", txt)
+        print("log:", txt)
 
 
 def readExcel():
@@ -70,34 +72,79 @@ def readExcel():
     return nodes, edges, src, dest
 
 
+def writeExcel(graph, maximum_flow):
+    excelOutput = pd.DataFrame(columns=['Source', 'Destination', 'Flow', 'Capacity', 'Blocking Flow'])
+
+    currNode = 1
+    for i in graph:
+        for j in i:
+            if j.flow > 0:
+                blockingFlow = 'No'
+                if j.flow == j.cap:
+                    blockingFlow = 'Yes'
+                newRow = {'Source': currNode,
+                          'Destination': j.nextNode + 1,
+                          'Flow': j.flow,
+                          'Capacity': j.cap,
+                          'Blocking Flow': blockingFlow}
+                excelOutput = excelOutput.append(newRow, ignore_index=True)
+        currNode += 1
+    excelWriter = pd.ExcelWriter(FILE_LOCATION_EXCEL + 'results.xlsx')
+    sheetTitle = 'Max Flow=' + str(maximum_flow)
+    excelOutput.to_excel(excelWriter, sheetTitle, index=False)
+
+    # Auto adjust the column width
+    # stackoverflow.com/questions/17326973/is-there-a-way-to-auto-adjust-excel-column-widths-with-pandas-excelwriter
+    worksheet = excelWriter.sheets[sheetTitle]
+    for idx, col in enumerate(excelOutput):  # loop through all columns
+        series = excelOutput[col]
+        max_len = max((
+            series.astype(str).map(len).max(),  # len of largest item
+            len(str(series.name))  # len of column name/header
+        )) + 1  # adding a little extra space
+        worksheet.set_column(idx, idx, max_len)  # set column width
+
+    excelOutput = excelOutput.style.set_properties(**{'text-align': 'center'})  # Center alignment
+
+    excelOutput.to_excel(excelWriter, sheetTitle, index=False)
+    excelWriter.save()
+
+    import openpyxl
+    wb = openpyxl.load_workbook(filename=FILE_LOCATION_EXCEL + 'results.xlsx')
+    worksheet = wb.active
+    worksheet.row_dimensions[1].width = 270
+
+    wb.save(filename=FILE_LOCATION_EXCEL + 'results.xlsx')
+
+
 def G_DRAW(graph, title):
     G = nx.MultiDiGraph()
     fig = plt.figure(figsize=(GRAPH_SIZE, GRAPH_SIZE), facecolor="#F5F5F5")
     G_edgeLabel = {}
     G_color = []
-    G_count = 1
+    currNode = 1
     plt.title(title)
     for i in graph:
         for j in i:
             if title == "Final Graph":
                 if j.flow > 0:
                     if j.flow == j.cap:
-                        G.add_edge(G_count, j.nextNode + 1, color=EDGE_OVERLOADED, weight=2,
+                        G.add_edge(currNode, j.nextNode + 1, color=EDGE_OVERLOADED, weight=2,
                                    length=math.floor(random() * 4 + 1))
                     else:
-                        G.add_edge(G_count, j.nextNode + 1, color=EDGE_DEFAULT, weight=1,
+                        G.add_edge(currNode, j.nextNode + 1, color=EDGE_DEFAULT, weight=1,
                                    length=math.floor(random() * 4 + 1))
-                    G_edgeLabel.update({(G_count, j.nextNode + 1): str(j.flow) + "/" + str(j.cap)})
+                    G_edgeLabel.update({(currNode, j.nextNode + 1): str(j.flow) + "/" + str(j.cap)})
             else:
                 if j.flow >= 0:
                     if j.flow == j.cap:
-                        G.add_edge(G_count, j.nextNode + 1, color=EDGE_OVERLOADED, weight=2,
+                        G.add_edge(currNode, j.nextNode + 1, color=EDGE_OVERLOADED, weight=2,
                                    length=math.floor(random() * 40 + 10))
                     else:
-                        G.add_edge(G_count, j.nextNode + 1, color=EDGE_DEFAULT, weight=1,
+                        G.add_edge(currNode, j.nextNode + 1, color=EDGE_DEFAULT, weight=1,
                                    length=math.floor(random() * 40 + 10))
-                    G_edgeLabel.update({(G_count, j.nextNode + 1): str(j.flow) + "/" + str(j.cap)})
-        G_count += 1
+                    G_edgeLabel.update({(currNode, j.nextNode + 1): str(j.flow) + "/" + str(j.cap)})
+        currNode += 1
 
     for node in G:
         if node == SOURCE + 1:
@@ -214,6 +261,10 @@ step_log("Calculations done!")
 print("Calculation Runtime:", "--- %.3f seconds ---" % (time.time() - start_time))
 
 print("Maximum Possible Flow:", MAXFLOW)
+
+step_log("Saving excel output...")
+writeExcel(graph, MAXFLOW)
+step_log("Excel file saved successfully!")
 
 if DRAW_FINAL_GRAPH:
     step_log("Drawing final graph...")
